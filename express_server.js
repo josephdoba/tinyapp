@@ -26,10 +26,9 @@ app.get('/', (req, res) => {
 // about page
 app.get('/about', (req, res) => {
   res.render('pages/about');
-  // res.render('/about');
 });
 
-// url's page: // vfor soem reason this was not working when it was in the views directory. Switched it to Pages and it worked.
+// url's page:
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
