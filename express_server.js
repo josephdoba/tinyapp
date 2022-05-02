@@ -1,8 +1,6 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
-
-//set template engine:
 app.set('view engine', 'ejs');
 
 const urlDatabase = {
@@ -11,7 +9,7 @@ const urlDatabase = {
 };
 
 //index
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
   const mascots = [
     { name: 'Sammy', organization: "DigitalOcean", birthYear: 2012},
     { name: 'Tux', organization: "Linux", birthYear: 1996},
@@ -28,40 +26,16 @@ app.get('/', function(req, res) {
 // about page
 app.get('/about', (req, res) => {
   res.render('pages/about');
+  // res.render('/about');
 });
+
+// url's page: // vfor soem reason this was not working when it was in the views directory. Switched it to Pages and it worked.
+app.get("/urls", (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
-
-/*
-app.get("/", (req, res) => {
-  // res.send("Hello!");
-  res.render('pages/index');
-});
-
-app.get("/urls.json", (req,res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-  res.render("/hello");
-});
-
-app.listen(PORT, () => {
-  console.log(`example app listening on port ${PORT}!`);
-});
-
-// set & fetch demo:
-// app.get("/set", (req,res) => {
-//   const a = 1;
-//   res.send(`a = ${a}`);
-// });
-
-// app.get("/fetch", (req,res) => {
-//   res.send(`a = ${a}`);
-// });
-*/
-
-
