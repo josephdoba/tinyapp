@@ -12,7 +12,7 @@ const urlDatabase = {
 };
 
 // short url id generator:
-//referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.
+// referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.
 const generateRandomString = () => {
   let randomString = "";
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -21,7 +21,6 @@ const generateRandomString = () => {
   }
   return randomString;
 };
-
 
 // intro to ejs code:
 /*
@@ -44,9 +43,7 @@ app.get('/about', (req, res) => {
 });
 */
 
-
-// ## Index routes:
-
+// ### Index routes ###:
 app.get('/', (req,res) => {
   res.send('Hello');
 });
@@ -75,26 +72,35 @@ app.get('/urls/:shortURL', (req, res) => {
 
 // short link to redirect to long link:
 app.get('/u/:shortURL', (req, res) => {
-  res.send("redirect to the long link");
+  // const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[req.params.shortURL]; // res.send('redirect to the long link');
+  // needs to reference the object with the kv pair..
+  // console.log(urlDatabase[':shortURL']);
+  // res.redirect(urlDatabase[':shortURL']); // returns undefined
+
+  console.log(longURL);
+  res.redirect(longURL); // returns undefined
+
+  // I wonder if its actualy searching fo r ":shortURL" instead of the code
+
+
+  // how do I get :shortURL into the database reference?
 });
 
-// ## API Routes:
+// ### API Routes ###:
 
 // CRUD METHODS:
 
-// create long url
+// Create long url
 app.post('/api/urls', (req, res) => {
-  console.log(req.body);
   let shortID = generateRandomString();
   urlDatabase[`${shortID}`] = req.body.longURL;
-  console.log(urlDatabase);
   res.redirect(`/urls/${shortID}`);
   res.send('Ok');
 });
 
 // Read all urls:
 app.get('/api/urls', (req, res) => {
-  
   res.send('/api/urls - read all urls');
 });
 
