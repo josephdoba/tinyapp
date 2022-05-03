@@ -56,7 +56,7 @@ app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase
   };
-  res.render("urls_index", templateVars);
+  res.render('urls_index', templateVars);
 });
 
 // get route to show form:
@@ -65,12 +65,17 @@ app.get('/urls/new', (req,res) => {
 });
 
 // new tiny urls page:
-app.get("/urls/:shortURL", (req, res) => {
+app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL]
   };
   res.render("urls_show", templateVars);
+});
+
+// short link to redirect to long link:
+app.get('/u/:shortURL', (req, res) => {
+  res.send("redirect to the long link");
 });
 
 // ## API Routes:
@@ -80,10 +85,11 @@ app.get("/urls/:shortURL", (req, res) => {
 // create long url
 app.post('/api/urls', (req, res) => {
   console.log(req.body);
+  let shortID = generateRandomString();
+  urlDatabase[`${shortID}`] = req.body.longURL;
+  console.log(urlDatabase);
+  res.redirect(`/urls/${shortID}`);
   res.send('Ok');
-  let shortIDnew = generateRandomString();
-  console.log(shortIDnew);
-  return shortIDnew;
 });
 
 // Read all urls:
