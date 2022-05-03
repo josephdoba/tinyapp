@@ -72,19 +72,8 @@ app.get('/urls/:shortURL', (req, res) => {
 
 // short link to redirect to long link:
 app.get('/u/:shortURL', (req, res) => {
-  // const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[req.params.shortURL]; // res.send('redirect to the long link');
-  // needs to reference the object with the kv pair..
-  // console.log(urlDatabase[':shortURL']);
-  // res.redirect(urlDatabase[':shortURL']); // returns undefined
-
-  console.log(longURL);
-  res.redirect(longURL); // returns undefined
-
-  // I wonder if its actualy searching fo r ":shortURL" instead of the code
-
-
-  // how do I get :shortURL into the database reference?
+  const longURL = urlDatabase[req.params.shortURL]; // req.params.shortURL is what we need to reference data from the forms
+  res.redirect(longURL);
 });
 
 // ### API Routes ###:
@@ -117,7 +106,9 @@ app.post('/api/urls/:shortURL/update', (req, res) => {
 
 // Delete one url:
 app.post('/api/urls/:shortURL/delete', (req, res) => {
-  res.send('/api/urls - delete request');
+  console.log(`Tinyurl: ${urlDatabase[req.params.shortURL]} deleted!`);
+  delete urlDatabase[req.params.shortURL];
+  res.redirect(`/urls`);
 });
 
 app.listen(PORT, () => {
