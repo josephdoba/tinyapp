@@ -22,8 +22,9 @@
       <tbody>
         <% for(let url in urls) { %>
           <tr>
-            <td href='#'><%= url %></td>
-            <td href='#'><%= urls[url] %></td>
+            <td><a href='http://localhost:8080/u/<%= url %>'><%= url %></a></td> 
+            <td href='localhost:8080/u/<%= url %>'><%= urls[url] %></td>
+            <td><form method="GET" action="/urls/<%= url %>"><button>Update</button></form></td>
             <td><form method="POST" action="api/urls/<%= url %>/delete"><button>Delete</button></form></td>
           </tr>
         <% } %>

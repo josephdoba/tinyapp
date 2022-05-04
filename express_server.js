@@ -48,7 +48,7 @@ app.get('/', (req,res) => {
   res.send('Hello');
 });
 
-// url's page:
+// My URL's page:
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase
@@ -56,12 +56,12 @@ app.get("/urls", (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-// get route to show form:
+// Create new URL page:
 app.get('/urls/new', (req,res) => {
   res.render('urls_new');
 });
 
-// new tiny urls page:
+// Individual url page:
 app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
@@ -85,7 +85,6 @@ app.post('/api/urls', (req, res) => {
   let shortID = generateRandomString();
   urlDatabase[`${shortID}`] = req.body.longURL;
   res.redirect(`/urls/${shortID}`);
-  res.send('Ok');
 });
 
 // Read all urls:
@@ -100,8 +99,9 @@ app.get('/api/urls/:shortURL', (req, res) => {
 
 // Update one url: // we need access to body
 app.post('/api/urls/:shortURL/update', (req, res) => {
-  console.log(req.body);
-  res.send('/api/urls - update url');
+  console.log("Update clicked");
+  urlDatabase[req.params.shortURL] = req.body.longURL;
+  res.redirect('/urls');
 });
 
 // Delete one url:
