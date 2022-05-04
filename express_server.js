@@ -7,13 +7,27 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
+
+// Databases:
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-// short url id generator:
-// referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-dino"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "funk-hawk"
+  }
+};
+
+// short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
 const generateRandomString = () => {
   let randomString = "";
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -22,6 +36,8 @@ const generateRandomString = () => {
   }
   return randomString;
 };
+
+
 
 // intro to ejs code:
 /*
@@ -45,11 +61,13 @@ app.get('/about', (req, res) => {
 */
 
 // ### Index routes ###:
+
+// Home:
 app.get('/', (req,res) => {
   res.send('Hello');
 });
 
-// My URL's page:
+// My URL's:
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
@@ -60,7 +78,7 @@ app.get("/urls", (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-// Create new URL page:
+// Create New Tiny URL:
 app.get('/urls/new', (req,res) => {
   const templateVars = {
     username: req.cookies["username"]
@@ -68,7 +86,7 @@ app.get('/urls/new', (req,res) => {
   res.render('urls_new', templateVars);
 });
 
-// Individual url page:
+// Inspect URL:
 app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
@@ -78,16 +96,29 @@ app.get('/urls/:shortURL', (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// short link to redirect to long link:
+// redirect shortURL to longURL:
 app.get('/u/:shortURL', (req, res) => {
   const longURL = urlDatabase[req.params.shortURL]; // req.params.shortURL is what we need to reference data from the forms
   res.redirect(longURL);
 });
 
+// Registration:
+app.get('/register', (req,res) => {
+  // res.send('This is the registration page');
+  res.render("register");
+});
+
+
+// ### Account functions ###:
+
+// register:
+app.post('api/register', (req,res) => {
+
+});
+
 // login process:
 app.post('/login', (req,res) => {
   let username = "";
-  console.log("The login route is hit");
   if (username !== req.body.username) {
     username = req.body.username;
     res.cookie('username', username);
@@ -98,6 +129,7 @@ app.post('/login', (req,res) => {
   res.redirect('/urls');
 });
 
+// logout process:
 app.post('/logout', (req,res) => {
   res.clearCookie('username');
   res.redirect('/urls');
