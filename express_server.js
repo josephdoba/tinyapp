@@ -95,7 +95,6 @@ app.post('/login', (req,res) => {
     res.clearCookie(username, username);
     username = req.body.username;
   }
-  // res.send(`This is the login page, logged in under ${username}`);
   res.redirect('/urls');
 });
 
