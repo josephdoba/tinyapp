@@ -60,7 +60,7 @@ app.get('/about', (req, res) => {
 });
 */
 
-// ### Index routes ###:
+// ### Index Routes ###:
 
 // Home:
 app.get('/', (req,res) => {
@@ -71,7 +71,7 @@ app.get('/', (req,res) => {
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    username: req.cookies["user_id"]
   };
   console.log(req.cookies);
   console.log("Inside the /url route handler");
@@ -81,7 +81,7 @@ app.get("/urls", (req, res) => {
 // Create New Tiny URL:
 app.get('/urls/new', (req,res) => {
   const templateVars = {
-    username: req.cookies["username"]
+    username: req.cookies["user_id"]
   };
   res.render('urls_new', templateVars);
 });
@@ -91,7 +91,7 @@ app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    username: req.cookies["user_id"]
   };
   res.render("urls_show", templateVars);
 });
@@ -111,9 +111,16 @@ app.get('/register', (req,res) => {
 
 // ### Account functions ###:
 
-// register:
-app.post('api/register', (req,res) => {
-
+// Submit account registeration:
+app.post('/register', (req,res) => {
+  console.log(req.body.name, req.body.email, req.body.password);
+  const newUserID = generateRandomString();
+  console.log(newUserID);
+  users[newUserID] = { id: req.body.name, email: req.body.email, password: req.body.password };
+  console.log(users);
+  res.cookie('user_id', newUserID);
+  // Object.users.assign({ newUserID: {name: req.body.name, email: req.body.email, password: req.body.password }});
+  res.redirect('/urls');
 });
 
 // login process:
@@ -121,7 +128,7 @@ app.post('/login', (req,res) => {
   let username = "";
   if (username !== req.body.username) {
     username = req.body.username;
-    res.cookie('username', username);
+    res.cookie('user_id', username);
   } else {
     res.clearCookie(username, username);
     username = req.body.username;
@@ -131,8 +138,19 @@ app.post('/login', (req,res) => {
 
 // logout process:
 app.post('/logout', (req,res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');
+});
+
+// ### Utility Routing:
+
+// Console.log users objects
+app.get('/api/register/consolelog', (req, res) => {
+  console.log("Show users object:");
+  console.log(users);
+
+
+  res.redirect("/urls");
 });
 
 // ### API Routes ###:
