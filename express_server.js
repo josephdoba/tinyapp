@@ -27,6 +27,7 @@ const users = {
   }
 };
 
+
 // short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
 const generateRandomString = () => {
   let randomString = "";
@@ -69,19 +70,20 @@ app.get('/', (req,res) => {
 
 // My URL's:
 app.get("/urls", (req, res) => {
+  const userID = req.cookies.user_id;
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["user_id"]
+    user: users[userID].email
   };
-  console.log(req.cookies);
-  console.log("Inside the /url route handler");
   res.render('urls_index', templateVars);
 });
 
 // Create New Tiny URL:
 app.get('/urls/new', (req,res) => {
+  // if the user is logged in, and if they exist in the db
+  
   const templateVars = {
-    username: req.cookies["user_id"]
+    user: req.cookies["user_id"].email
   };
   res.render('urls_new', templateVars);
 });
@@ -91,7 +93,7 @@ app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["user_id"]
+    user: req.cookies["user_id"].email
   };
   res.render("urls_show", templateVars);
 });
@@ -113,14 +115,21 @@ app.get('/register', (req,res) => {
 
 // Submit account registeration:
 app.post('/register', (req,res) => {
-  console.log(req.body.name, req.body.email, req.body.password);
-  const newUserID = generateRandomString();
-  console.log(newUserID);
-  users[newUserID] = { id: req.body.name, email: req.body.email, password: req.body.password };
-  console.log(users);
-  res.cookie('user_id', newUserID);
-  // Object.users.assign({ newUserID: {name: req.body.name, email: req.body.email, password: req.body.password }});
-  res.redirect('/urls');
+  let accountReg = registrationEmptyCheck(req);
+  console.log(`empty check: ${accountReg}`);
+  accountReg = registrationEmailCheck(req);
+  console.log(`identical email check: ${accountReg}`);
+  if (accountReg === true) {
+    const newUserID = generateRandomString();
+    users[newUserID] = { id: req.body.name, email: req.body.email, password: req.body.password };
+    res.cookie('user_id', newUserID);
+    res.redirect('/urls');
+  } else {
+    console.log("400 Bad Request");
+    res.status(400);
+    res.send("400 Bad Request");
+    // res.redirect('/register');
+  }
 });
 
 // login process:
@@ -142,7 +151,7 @@ app.post('/logout', (req,res) => {
   res.redirect('/urls');
 });
 
-// ### Utility Routing:
+// ### Helper Functions:
 
 // Console.log users objects
 app.get('/api/register/consolelog', (req, res) => {
@@ -152,6 +161,27 @@ app.get('/api/register/consolelog', (req, res) => {
 
   res.redirect("/urls");
 });
+
+// Check if email or password fields are empty:
+const registrationEmptyCheck = (req) => {
+  if (req.body.name === "" || req.body.email === "" || req.body.password === "") {
+    return false;
+  } else {
+    return true;
+  }
+};
+
+// loop through emails of database:
+const registrationEmailCheck = (req) => {
+  for (const userid in users) {
+    if (users[userid].email === req.body.email) {
+      return false;
+    }
+  }
+  return true;
+};
+
+
 
 // ### API Routes ###:
 
@@ -176,17 +206,16 @@ app.get('/api/urls/:shortURL', (req, res) => {
 
 // Update one url: // we need access to body
 app.post('/api/urls/:shortURL/update', (req, res) => {
-  console.log("Update clicked");
   urlDatabase[req.params.shortURL] = req.body.longURL;
   res.redirect('/urls');
 });
 
 // Delete one url:
 app.post('/api/urls/:shortURL/delete', (req, res) => {
-  console.log(`Tinyurl: ${urlDatabase[req.params.shortURL]} deleted!`);
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
