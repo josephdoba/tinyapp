@@ -95,7 +95,7 @@ app.get('/urls/:shortURL', (req, res) => {
 
 // redirect shortURL to longURL:
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]; // req.params.shortURL is what we need to reference data from the forms
+  const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
 
@@ -134,15 +134,13 @@ app.post('/api/login', (req, res) => {
   }
 
   // continue logging in
-  res.cookie('user_id', user.id); // Unsure how to assign the random stringID, to the cookie key: user_id
+  res.cookie('user_id', user.id);
   res.redirect('/urls');
 });
 
 // logout process:
 app.post('/logout', (req, res) => {
-  // username = req.body.username;
-  // res.clearCookie(username, username);
-
+  res.clearCookie();
   res.redirect('/');
 });
 
