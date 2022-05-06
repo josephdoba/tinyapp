@@ -24,9 +24,20 @@ const users = {
     id: "user2RandomID",
     email: "user2@example.com",
     password: "funk-hawk"
+  },
+  "123abc": {
+    id: "Bob",
+    email: "123@email.com",
+    password: "123"
   }
 };
 
+/*
+1. update the login form to use email and password
+2. in post /login, use the email and password to find the user in users database
+3. Return the user_id that you found
+4. Set the cookie to the user_id
+*/
 
 // short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
 const generateRandomString = () => {
@@ -39,41 +50,26 @@ const generateRandomString = () => {
 };
 
 
-
-// intro to ejs code:
-/*
-app.get('/', (req, res) => {
-  const mascots = [
-    { name: 'Sammy', organization: "DigitalOcean", birthYear: 2012},
-    { name: 'Tux', organization: "Linux", birthYear: 1996},
-    { name: 'Moby Dock', organization: "Docker", birthYear: 2013}
-  ];
-  const tagline = "No programming concept is complete without a cute animal mascot.";
-
-  const templateVars = {
-    mascots,
-    tagline
-  };
-  res.render('pages/index', templateVars);
-});
-app.get('/about', (req, res) => {
-  res.render('pages/about');
-});
-*/
-
 // ### Index Routes ###:
 
 // Home:
 app.get('/', (req,res) => {
-  res.send('Hello');
+  res.send('Hello from Homepage');
+});
+
+// login Page:
+app.get('/login', (req,res) => {
+  // res.send("login page");
+  res.render("urls_login");
 });
 
 // My URL's:
 app.get("/urls", (req, res) => {
   const userID = req.cookies.user_id;
+  
   const templateVars = {
     urls: urlDatabase,
-    user: users[userID].email
+    user: users[userID] ? users[userID].email : null
   };
   res.render('urls_index', templateVars);
 });
@@ -115,40 +111,49 @@ app.get('/register', (req,res) => {
 
 // Submit account registeration:
 app.post('/register', (req,res) => {
-  let accountReg = registrationEmptyCheck(req);
-  console.log(`empty check: ${accountReg}`);
-  accountReg = registrationEmailCheck(req);
-  console.log(`identical email check: ${accountReg}`);
-  if (accountReg === true) {
-    const newUserID = generateRandomString();
-    users[newUserID] = { id: req.body.name, email: req.body.email, password: req.body.password };
-    res.cookie('user_id', newUserID);
-    res.redirect('/urls');
-  } else {
-    console.log("400 Bad Request");
+  if (!registrationEmptyCheck(req) || !registrationEmailCheck(req)) {
     res.status(400);
-    res.send("400 Bad Request");
-    // res.redirect('/register');
+    return res.send("400 Bad Request");
   }
+
+  const newUserID = generateRandomString();
+  users[newUserID] = { id: req.body.name, email: req.body.email, password: req.body.password };
+  res.cookie('user_id', newUserID);
+  res.redirect('/urls');
+
+  // res.redirect('/register');
 });
 
 // login process:
-app.post('/login', (req,res) => {
-  let username = "";
-  if (username !== req.body.username) {
-    username = req.body.username;
-    res.cookie('user_id', username);
+app.post('/api/login', (req,res) => {
+  if (!loginEmailPasswordCheck(req)) {
+    console.log("email/pw check failed, and returned false");
+    res.send("Missing fields in the login page or wrong credentials. Please try again");
+    return res.status(400);
+
   } else {
-    res.clearCookie(username, username);
-    username = req.body.username;
+    console.log("email/pw check passed and returned true");
   }
+  
+  // let username = "";
+  // if (username === req.body.username) {
+  //   return res.status(400);
+  // } else {
+  //   username = req.body.username;
+  //   res.cookie('user_id', username);
+  //   res.redirect('/urls');
+  // }
+  console.log("Accessing URLs from teh login page");
+  console.log(`with the values: ${req.body.email} and ${req.body.password}`);
   res.redirect('/urls');
 });
 
 // logout process:
 app.post('/logout', (req,res) => {
-  res.clearCookie('user_id');
-  res.redirect('/urls');
+  // username = req.body.username;
+  // res.clearCookie(username, username);
+
+  res.redirect('/');
 });
 
 // ### Helper Functions:
@@ -181,6 +186,18 @@ const registrationEmailCheck = (req) => {
   return true;
 };
 
+// loop through email and password for login:
+const loginEmailPasswordCheck = (req) => {
+  if (!registrationEmailCheck(req)) {
+    for (const password in users) {
+      if (users[password].password === req.body.password) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+// return the userID
 
 
 // ### API Routes ###:
