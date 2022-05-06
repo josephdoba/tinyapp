@@ -10,8 +10,18 @@ app.use(cookieParser());
 
 // Databases:
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "123abc"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "123abc"
+  },
+  "8v3jf3": {
+    longURL: "https://www.spotify.com",
+    userID: "userRandomID"
+  }
 };
 
 const users = {
@@ -32,7 +42,7 @@ const users = {
   }
 };
 
-
+// ### Helper Functions:
 const getUserByEmail = (email) => {
   const values = Object.values(users);
   for (const user of values) {
@@ -41,6 +51,62 @@ const getUserByEmail = (email) => {
     }
   }
   return null;
+};
+
+const urlsForUser = (userID) => {
+  const keys = urlDatabase;
+  const longURLDatabase = {};
+  // console.log(keys);
+  for (const shortID in keys) {
+    if (keys[shortID].userID === userID) {
+      // console.log(keys[shortID].longURL);
+
+      longURLDatabase[shortID] = { longURL: keys[shortID].longURL };
+    }
+    // console.log(urlDatabase[shortID].longURL);
+    // console.log(urlDatabase[shortID].userID);
+    // if short id.userID in urlDatabase matches users.id, return urlDatabase.shortid.longURL
+  }
+  return longURLDatabase;
+};
+
+
+// Check if email or password fields are empty:
+const registrationEmptyCheck = (req) => {
+  if (req.body.name === "" || req.body.email === "" || req.body.password === "") {
+    return false;
+  } else {
+    return true;
+  }
+};
+
+// Console.log users objects
+app.get('/api/register/consolelog', (req, res) => {
+  console.log("Show users object:");
+  console.log(users);
+  res.redirect("/urls");
+});
+
+// loop through emails of database:
+const registrationEmailCheck = (req) => {
+  for (const userid in users) {
+    if (users[userid].email === req.body.email) {
+      return false;
+    }
+  }
+  return true;
+};
+
+// loop through email and password for login:
+const loginEmailPasswordCheck = (req) => {
+  if (!registrationEmailCheck(req)) {
+    for (const password in users) {
+      if (users[password].password === req.body.password) {
+        return true;
+      }
+    }
+  }
+  return false;
 };
 
 // short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
@@ -65,11 +131,19 @@ app.get('/login', (req, res) => {
   res.render("urls_login");
 });
 
-// My URL's:
+// My URLs:
 app.get("/urls", (req, res) => {
   const userID = req.cookies.user_id;
+  if (!userID) {
+    res.status(403);
+    return res.redirect('/login');
+  }
+
+  const userURLs = urlsForUser(userID); //should go here, but returns completely empty
+  console.log(userURLs);
+
   const templateVars = {
-    urls: urlDatabase,
+    urls: userURLs,
     user: users[userID] ? users[userID].email : null
   };
   res.render('urls_index', templateVars);
@@ -77,6 +151,10 @@ app.get("/urls", (req, res) => {
 
 // Create New Tiny URL:
 app.get('/urls/new', (req, res) => {
+  const userID = req.cookies.user_id;
+  if (!userID) {
+    return res.redirect('/login');
+  }
   const templateVars = {
     user: req.cookies["user_id"].email
   };
@@ -85,6 +163,10 @@ app.get('/urls/new', (req, res) => {
 
 // Inspect URL:
 app.get('/urls/:shortURL', (req, res) => {
+  const userID = req.cookies.user_id;
+  if (!userID) {
+    return res.redirect('/login');
+  }
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
@@ -95,7 +177,8 @@ app.get('/urls/:shortURL', (req, res) => {
 
 // redirect shortURL to longURL:
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  // might need to refactor this
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -140,49 +223,11 @@ app.post('/api/login', (req, res) => {
 
 // logout process:
 app.post('/logout', (req, res) => {
-  res.clearCookie();
+  res.clearCookie('user_id');
   res.redirect('/');
 });
 
-// ### Helper Functions:
 
-// Console.log users objects
-app.get('/api/register/consolelog', (req, res) => {
-  console.log("Show users object:");
-  console.log(users);
-  res.redirect("/urls");
-});
-
-// Check if email or password fields are empty:
-const registrationEmptyCheck = (req) => {
-  if (req.body.name === "" || req.body.email === "" || req.body.password === "") {
-    return false;
-  } else {
-    return true;
-  }
-};
-
-// loop through emails of database:
-const registrationEmailCheck = (req) => {
-  for (const userid in users) {
-    if (users[userid].email === req.body.email) {
-      return false;
-    }
-  }
-  return true;
-};
-
-// loop through email and password for login:
-const loginEmailPasswordCheck = (req) => {
-  if (!registrationEmailCheck(req)) {
-    for (const password in users) {
-      if (users[password].password === req.body.password) {
-        return true;
-      }
-    }
-  }
-  return false;
-};
 
 // ### API Routes ###:
 
