@@ -5,7 +5,7 @@ app.set('view engine', 'ejs');
 
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Databases:
@@ -26,18 +26,22 @@ const users = {
     password: "funk-hawk"
   },
   "123abc": {
-    id: "Bob",
+    id: "123abc",
     email: "123@email.com",
     password: "123"
   }
 };
 
-/*
-1. update the login form to use email and password
-2. in post /login, use the email and password to find the user in users database
-3. Return the user_id that you found
-4. Set the cookie to the user_id
-*/
+
+const getUserByEmail = (email) => {
+  const values = Object.values(users);
+  for (const user of values) {
+    if (user.email === email) {
+      return user;
+    }
+  }
+  return null;
+};
 
 // short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
 const generateRandomString = () => {
@@ -49,24 +53,21 @@ const generateRandomString = () => {
   return randomString;
 };
 
-
 // ### Index Routes ###:
 
 // Home:
-app.get('/', (req,res) => {
+app.get('/', (req, res) => {
   res.send('Hello from Homepage');
 });
 
 // login Page:
-app.get('/login', (req,res) => {
-  // res.send("login page");
+app.get('/login', (req, res) => {
   res.render("urls_login");
 });
 
 // My URL's:
 app.get("/urls", (req, res) => {
   const userID = req.cookies.user_id;
-  
   const templateVars = {
     urls: urlDatabase,
     user: users[userID] ? users[userID].email : null
@@ -75,9 +76,7 @@ app.get("/urls", (req, res) => {
 });
 
 // Create New Tiny URL:
-app.get('/urls/new', (req,res) => {
-  // if the user is logged in, and if they exist in the db
-  
+app.get('/urls/new', (req, res) => {
   const templateVars = {
     user: req.cookies["user_id"].email
   };
@@ -101,16 +100,14 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 // Registration:
-app.get('/register', (req,res) => {
-  // res.send('This is the registration page');
+app.get('/register', (req, res) => {
   res.render("register");
 });
-
 
 // ### Account functions ###:
 
 // Submit account registeration:
-app.post('/register', (req,res) => {
+app.post('/register', (req, res) => {
   if (!registrationEmptyCheck(req) || !registrationEmailCheck(req)) {
     res.status(400);
     return res.send("400 Bad Request");
@@ -120,36 +117,29 @@ app.post('/register', (req,res) => {
   users[newUserID] = { id: req.body.name, email: req.body.email, password: req.body.password };
   res.cookie('user_id', newUserID);
   res.redirect('/urls');
-
-  // res.redirect('/register');
 });
 
 // login process:
-app.post('/api/login', (req,res) => {
-  if (!loginEmailPasswordCheck(req)) {
-    console.log("email/pw check failed, and returned false");
-    res.send("Missing fields in the login page or wrong credentials. Please try again");
-    return res.status(400);
+app.post('/api/login', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
 
-  } else {
-    console.log("email/pw check passed and returned true");
+  if (!password || !email) {
+    return res.status(400).send("Email and password cant be blank");
   }
-  
-  // let username = "";
-  // if (username === req.body.username) {
-  //   return res.status(400);
-  // } else {
-  //   username = req.body.username;
-  //   res.cookie('user_id', username);
-  //   res.redirect('/urls');
-  // }
-  console.log("Accessing URLs from teh login page");
-  console.log(`with the values: ${req.body.email} and ${req.body.password}`);
+
+  const user = getUserByEmail(email);
+  if (!user || password !== user.password) {
+    return res.status(400).send("Invalid user or password");
+  }
+
+  // continue logging in
+  res.cookie('user_id', user.id); // Unsure how to assign the random stringID, to the cookie key: user_id
   res.redirect('/urls');
 });
 
 // logout process:
-app.post('/logout', (req,res) => {
+app.post('/logout', (req, res) => {
   // username = req.body.username;
   // res.clearCookie(username, username);
 
@@ -162,8 +152,6 @@ app.post('/logout', (req,res) => {
 app.get('/api/register/consolelog', (req, res) => {
   console.log("Show users object:");
   console.log(users);
-
-
   res.redirect("/urls");
 });
 
@@ -197,8 +185,6 @@ const loginEmailPasswordCheck = (req) => {
   }
   return false;
 };
-// return the userID
-
 
 // ### API Routes ###:
 
