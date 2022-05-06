@@ -5,15 +5,45 @@ app.set('view engine', 'ejs');
 
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Databases:
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-// short url id generator:
-// referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-dino"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "funk-hawk"
+  },
+  "123abc": {
+    id: "123abc",
+    email: "123@email.com",
+    password: "123"
+  }
+};
+
+
+const getUserByEmail = (email) => {
+  const values = Object.values(users);
+  for (const user of values) {
+    if (user.email === email) {
+      return user;
+    }
+  }
+  return null;
+};
+
+// short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
 const generateRandomString = () => {
   let randomString = "";
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -23,85 +53,136 @@ const generateRandomString = () => {
   return randomString;
 };
 
-// intro to ejs code:
-/*
+// ### Index Routes ###:
+
+// Home:
 app.get('/', (req, res) => {
-  const mascots = [
-    { name: 'Sammy', organization: "DigitalOcean", birthYear: 2012},
-    { name: 'Tux', organization: "Linux", birthYear: 1996},
-    { name: 'Moby Dock', organization: "Docker", birthYear: 2013}
-  ];
-  const tagline = "No programming concept is complete without a cute animal mascot.";
-
-  const templateVars = {
-    mascots,
-    tagline
-  };
-  res.render('pages/index', templateVars);
-});
-app.get('/about', (req, res) => {
-  res.render('pages/about');
-});
-*/
-
-// ### Index routes ###:
-app.get('/', (req,res) => {
-  res.send('Hello');
+  res.send('Hello from Homepage');
 });
 
-// My URL's page:
+// login Page:
+app.get('/login', (req, res) => {
+  res.render("urls_login");
+});
+
+// My URL's:
 app.get("/urls", (req, res) => {
+  const userID = req.cookies.user_id;
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: users[userID] ? users[userID].email : null
   };
-  console.log(req.cookies);
-  console.log("Inside the /url route handler");
   res.render('urls_index', templateVars);
 });
 
-// Create new URL page:
-app.get('/urls/new', (req,res) => {
+// Create New Tiny URL:
+app.get('/urls/new', (req, res) => {
   const templateVars = {
-    username: req.cookies["username"]
+    user: req.cookies["user_id"].email
   };
   res.render('urls_new', templateVars);
 });
 
-// Individual url page:
+// Inspect URL:
 app.get('/urls/:shortURL', (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies["username"]
+    user: req.cookies["user_id"].email
   };
   res.render("urls_show", templateVars);
 });
 
-// short link to redirect to long link:
+// redirect shortURL to longURL:
 app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]; // req.params.shortURL is what we need to reference data from the forms
+  const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
 
-// login process:
-app.post('/login', (req,res) => {
-  let username = "";
-  console.log("The login route is hit");
-  if (username !== req.body.username) {
-    username = req.body.username;
-    res.cookie('username', username);
-  } else {
-    res.clearCookie(username, username);
-    username = req.body.username;
+// Registration:
+app.get('/register', (req, res) => {
+  res.render("register");
+});
+
+// ### Account functions ###:
+
+// Submit account registeration:
+app.post('/register', (req, res) => {
+  if (!registrationEmptyCheck(req) || !registrationEmailCheck(req)) {
+    res.status(400);
+    return res.send("400 Bad Request");
   }
+
+  const newUserID = generateRandomString();
+  users[newUserID] = { id: req.body.name, email: req.body.email, password: req.body.password };
+  res.cookie('user_id', newUserID);
   res.redirect('/urls');
 });
 
-app.post('/logout', (req,res) => {
-  res.clearCookie('username');
+// login process:
+app.post('/api/login', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (!password || !email) {
+    return res.status(400).send("Email and password cant be blank");
+  }
+
+  const user = getUserByEmail(email);
+  if (!user || password !== user.password) {
+    return res.status(400).send("Invalid user or password");
+  }
+
+  // continue logging in
+  res.cookie('user_id', user.id);
   res.redirect('/urls');
 });
+
+// logout process:
+app.post('/logout', (req, res) => {
+  res.clearCookie();
+  res.redirect('/');
+});
+
+// ### Helper Functions:
+
+// Console.log users objects
+app.get('/api/register/consolelog', (req, res) => {
+  console.log("Show users object:");
+  console.log(users);
+  res.redirect("/urls");
+});
+
+// Check if email or password fields are empty:
+const registrationEmptyCheck = (req) => {
+  if (req.body.name === "" || req.body.email === "" || req.body.password === "") {
+    return false;
+  } else {
+    return true;
+  }
+};
+
+// loop through emails of database:
+const registrationEmailCheck = (req) => {
+  for (const userid in users) {
+    if (users[userid].email === req.body.email) {
+      return false;
+    }
+  }
+  return true;
+};
+
+// loop through email and password for login:
+const loginEmailPasswordCheck = (req) => {
+  if (!registrationEmailCheck(req)) {
+    for (const password in users) {
+      if (users[password].password === req.body.password) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
 
 // ### API Routes ###:
 
@@ -126,17 +207,16 @@ app.get('/api/urls/:shortURL', (req, res) => {
 
 // Update one url: // we need access to body
 app.post('/api/urls/:shortURL/update', (req, res) => {
-  console.log("Update clicked");
   urlDatabase[req.params.shortURL] = req.body.longURL;
   res.redirect('/urls');
 });
 
 // Delete one url:
 app.post('/api/urls/:shortURL/delete', (req, res) => {
-  console.log(`Tinyurl: ${urlDatabase[req.params.shortURL]} deleted!`);
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
