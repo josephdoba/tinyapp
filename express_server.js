@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
+const bcrypt = require('bcryptjs');
 app.set('view engine', 'ejs');
 
 const cookieParser = require('cookie-parser');
@@ -24,21 +25,22 @@ const urlDatabase = {
   }
 };
 
+
 const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-dino"
+    password: bcrypt.hashSync("purple-dino",10) // Is this common practice?
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "funk-hawk"
+    password: bcrypt.hashSync("funk-hawk",10)
   },
   "123abc": {
     id: "123abc",
     email: "123@email.com",
-    password: "123"
+    password: bcrypt.hashSync("123",10)
   }
 };
 
@@ -56,16 +58,10 @@ const getUserByEmail = (email) => {
 const urlsForUser = (userID) => {
   const keys = urlDatabase;
   const longURLDatabase = {};
-  // console.log(keys);
   for (const shortID in keys) {
     if (keys[shortID].userID === userID) {
-      // console.log(keys[shortID].longURL);
-
       longURLDatabase[shortID] = { longURL: keys[shortID].longURL };
     }
-    // console.log(urlDatabase[shortID].longURL);
-    // console.log(urlDatabase[shortID].userID);
-    // if short id.userID in urlDatabase matches users.id, return urlDatabase.shortid.longURL
   }
   return longURLDatabase;
 };
@@ -81,11 +77,11 @@ const registrationEmptyCheck = (req) => {
 };
 
 // Console.log users objects
-app.get('/api/register/consolelog', (req, res) => {
-  console.log("Show users object:");
-  console.log(users);
-  res.redirect("/urls");
-});
+// app.get('/api/register/consolelog', (req, res) => {
+//   console.log("Show users object:");
+//   console.log(users);
+//   res.redirect("/urls");
+// });
 
 // loop through emails of database:
 const registrationEmailCheck = (req) => {
@@ -139,9 +135,8 @@ app.get("/urls", (req, res) => {
     return res.redirect('/login');
   }
 
-  const userURLs = urlsForUser(userID); //should go here, but returns completely empty
+  const userURLs = urlsForUser(userID);
   console.log(userURLs);
-
   const templateVars = {
     urls: userURLs,
     user: users[userID] ? users[userID].email : null
@@ -163,21 +158,24 @@ app.get('/urls/new', (req, res) => {
 
 // Inspect URL:
 app.get('/urls/:shortURL', (req, res) => {
+  const shortID = req.params.shortURL;
   const userID = req.cookies.user_id;
   if (!userID) {
     return res.redirect('/login');
   }
   const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    shortURL: shortID,
+    longURL: urlDatabase[shortID].longURL,
     user: req.cookies["user_id"].email
   };
+
   res.render("urls_show", templateVars);
 });
 
 // redirect shortURL to longURL:
 app.get('/u/:shortURL', (req, res) => {
   // might need to refactor this
+  console.log(req.params.shortURL);
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
@@ -197,7 +195,7 @@ app.post('/register', (req, res) => {
   }
 
   const newUserID = generateRandomString();
-  users[newUserID] = { id: req.body.name, email: req.body.email, password: req.body.password };
+  users[newUserID] = { id: newUserID, email: req.body.email, password: bcrypt.hashSync(req.body.password, 10) };
   res.cookie('user_id', newUserID);
   res.redirect('/urls');
 });
@@ -206,13 +204,19 @@ app.post('/register', (req, res) => {
 app.post('/api/login', (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-
+  // console.log("---------- Line 215: ----------");
+  // // console.log(password);
+  // // console.log(bcrypt.compareSync(password, users['123abc'].password));
+  // console.log(bcrypt.compareSync(password, users['123abc'].password));
+  // console.log("------------------------------");
   if (!password || !email) {
     return res.status(400).send("Email and password cant be blank");
   }
 
   const user = getUserByEmail(email);
-  if (!user || password !== user.password) {
+  // if (!user || password !== user.password) {
+  console.log(user);
+  if (!user || bcrypt.compareSync(password, user.password) === false) {
     return res.status(400).send("Invalid user or password");
   }
 
@@ -227,16 +231,18 @@ app.post('/logout', (req, res) => {
   res.redirect('/');
 });
 
-
-
 // ### API Routes ###:
 
 // CRUD METHODS:
 
-// Create long url
+// Create new URL api
 app.post('/api/urls', (req, res) => {
   let shortID = generateRandomString();
-  urlDatabase[`${shortID}`] = req.body.longURL;
+  urlDatabase[`${shortID}`] = { longURL: req.body.longURL, userID: req.cookies['user_id']};
+  console.log(urlDatabase);
+  console.log(req.cookies);
+
+  
   res.redirect(`/urls/${shortID}`);
 });
 
