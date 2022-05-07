@@ -4,16 +4,13 @@ const PORT = 8080;
 const bcrypt = require('bcryptjs');
 app.set('view engine', 'ejs');
 
-// const cookieParser = require('cookie-parser'); //replaced with cookie-session:
 const cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(cookieParser()); //depreciated
 app.use(cookieSession({
   name: 'session',
   keys: ['newKeys123']
 }));
-
 
 // Databases:
 const urlDatabase = {
@@ -35,7 +32,7 @@ const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: bcrypt.hashSync("purple-dino",10) // Is this common practice?
+    password: bcrypt.hashSync("purple-dino",10) // Not common practice since the text still shows, however was informed by a mentor this is fine for the assignment
   },
   "user2RandomID": {
     id: "user2RandomID",
@@ -49,19 +46,10 @@ const users = {
   }
 };
 
-// ## helper imports
+// ### Helper imports
 const { getUserByEmail } = require('./helpers.js');
 
 // ### Helper Functions:
-// const getUserByEmail = (email, users) => {
-//   const values = Object.values(users);
-//   for (const user of values) {
-//     if (user.email === email) {
-//       return user;
-//     }
-//   }
-//   return null;
-// };
 
 const urlsForUser = (userID) => {
   const keys = urlDatabase;
@@ -82,13 +70,6 @@ const registrationEmptyCheck = (req) => {
     return true;
   }
 };
-
-// Console.log users objects
-// app.get('/api/register/consolelog', (req, res) => {
-//   console.log("Show users object:");
-//   console.log(users);
-//   res.redirect("/urls");
-// });
 
 // loop through emails of database:
 const registrationEmailCheck = (req) => {
@@ -114,7 +95,6 @@ const loginEmailPasswordCheck = (req) => {
 
 
 // short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
-
 const generateRandomString = () => {
   let randomString = "";
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

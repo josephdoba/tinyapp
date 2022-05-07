@@ -19,9 +19,13 @@ const testUsers = {
 
 describe('getUserByEmail Function:', function() {
   it('should return true if it finds a valid email', function() {
-    const user = getUserByEmail("user2@example.com", testUsers);
-    const expectedUserID = "user2RandomID";
-    console.log(user, expectedUserID);
+    const user = getUserByEmail("user@example.com", testUsers);
+    const expectedUserID = "userRandomID";
     assert(user.id === expectedUserID, "Success! it returns true");
+  });
+  it('should return null if it does not find a valid email', function() {
+    const user = getUserByEmail("user3@example.com", testUsers);
+    console.log(user);
+    assert(user === null, "Success! it returns true");
   });
 });
