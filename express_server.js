@@ -5,10 +5,14 @@ const bcrypt = require('bcryptjs');
 app.set('view engine', 'ejs');
 
 const cookieParser = require('cookie-parser'); //replaced with cookie-session:
-// const cookieSession = require('cookie-session');
+const cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieParser()); //depreciated
+app.use(cookieSession({
+  name: 'session',
+  keys: ['newKeys123']
+}));
 
 // Databases:
 const urlDatabase = {
@@ -104,7 +108,12 @@ const loginEmailPasswordCheck = (req) => {
   return false;
 };
 
+const getUserById = (id) => {
+
+};
+
 // short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
+
 const generateRandomString = () => {
   let randomString = "";
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -128,14 +137,15 @@ app.get('/login', (req, res) => {
 
 // My URLs:
 app.get("/urls", (req, res) => {
-  const userID = req.cookies.user_id;
+  // const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   if (!userID) {
     res.status(403);
     return res.redirect('/login');
   }
 
   const userURLs = urlsForUser(userID);
-  console.log(userURLs);
+  // console.log(userURLs);
   const templateVars = {
     urls: userURLs,
     user: users[userID] ? users[userID].email : null
@@ -143,14 +153,16 @@ app.get("/urls", (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-// Create New Tiny URL:
+// Create New Tiny URL:user: users[userID] ? users[userID].email
 app.get('/urls/new', (req, res) => {
-  const userID = req.cookies.user_id;
+  // const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   if (!userID) {
     return res.redirect('/login');
   }
   const templateVars = {
-    user: req.cookies["user_id"].email
+    // user: req.cookies["user_id"].email
+    user: users[userID] ? users[userID].email : null
   };
   res.render('urls_new', templateVars);
 });
@@ -158,14 +170,18 @@ app.get('/urls/new', (req, res) => {
 // Inspect URL:
 app.get('/urls/:shortURL', (req, res) => {
   const shortID = req.params.shortURL;
-  const userID = req.cookies.user_id;
+  // const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
+  console.log("------------------------- Line 167: --------------------- ");
+  console.log(userID);
   if (!userID) {
     return res.redirect('/login');
   }
   const templateVars = {
     shortURL: shortID,
     longURL: urlDatabase[shortID].longURL,
-    user: req.cookies["user_id"].email
+    // user: req.cookies["user_id"].email
+    user: userID.email
   };
 
   res.render("urls_show", templateVars);
@@ -174,7 +190,7 @@ app.get('/urls/:shortURL', (req, res) => {
 // redirect shortURL to longURL:
 app.get('/u/:shortURL', (req, res) => {
   // might need to refactor this
-  console.log(req.params.shortURL);
+  // console.log(req.params.shortURL);
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
@@ -195,7 +211,8 @@ app.post('/register', (req, res) => {
 
   const newUserID = generateRandomString();
   users[newUserID] = { id: newUserID, email: req.body.email, password: bcrypt.hashSync(req.body.password, 10) };
-  res.cookie('user_id', newUserID);
+  // res.cookie('user_id', newUserID);
+  req.session['user_id'] = newUserID;
   res.redirect('/urls');
 });
 
@@ -214,19 +231,22 @@ app.post('/api/login', (req, res) => {
 
   const user = getUserByEmail(email);
   // if (!user || password !== user.password) {
-  console.log(user);
+  // console.log(user);
   if (!user || bcrypt.compareSync(password, user.password) === false) {
     return res.status(400).send("Invalid user or password");
   }
 
   // continue logging in
-  res.cookie('user_id', user.id);
+  // res.cookie('user_id', user.id);
+  // req.session['user_id'] = user.id; // correct session syntax
+  req.session.user_id = user.id; // correct session syntax
   res.redirect('/urls');
 });
 
 // logout process:
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
+  // res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/');
 });
 
@@ -237,9 +257,10 @@ app.post('/logout', (req, res) => {
 // Create new URL api
 app.post('/api/urls', (req, res) => {
   let shortID = generateRandomString();
-  urlDatabase[`${shortID}`] = { longURL: req.body.longURL, userID: req.cookies['user_id']};
-  console.log(urlDatabase);
-  console.log(req.cookies);
+  // urlDatabase[`${shortID}`] = { longURL: req.body.longURL, userID: req.cookies['user_id']};
+  urlDatabase[`${shortID}`] = { longURL: req.body.longURL, userID: req.session.user_id};
+  // console.log(urlDatabase);
+  // console.log(req.cookies);
 
   
   res.redirect(`/urls/${shortID}`);
@@ -257,7 +278,9 @@ app.get('/api/urls/:shortURL', (req, res) => {
 
 // Update one url: // we need access to body
 app.post('/api/urls/:shortURL/update', (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL;
+  //urlDatabase[shortid].longURL
+  // console.log(urlDatabase[req.params.shortURL]);
+  urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect('/urls');
 });
 
