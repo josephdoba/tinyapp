@@ -4,7 +4,8 @@
 Allows users to create an account, create lists of URLs to become short, and share with others. This project was created and published by myself, as part of my education at Lighthouse Labs.
 
 !["My URLs"](https://github.com/josephdoba/tinyapp/blob/main/docs/myUrls_page.png)
-!["Update URLs"](https://github.com/josephdoba/tinyapp/tree/main/docs/myUrls_update_page.png)
+
+!["Update URLs"](https://github.com/josephdoba/tinyapp/blob/main/docs/myUrls_update_page.png)
 
 
 **Caution: This Application is educational, and is prone to vulnerabilities. It is not intended for major or commercial productions.**
