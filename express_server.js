@@ -14,6 +14,7 @@ app.use(cookieSession({
   keys: ['newKeys123']
 }));
 
+
 // Databases:
 const urlDatabase = {
   "b2xVn2": {
@@ -48,16 +49,19 @@ const users = {
   }
 };
 
+// ## helper imports
+const { getUserByEmail } = require('./helpers.js');
+
 // ### Helper Functions:
-const getUserByEmail = (email) => {
-  const values = Object.values(users);
-  for (const user of values) {
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
-};
+// const getUserByEmail = (email) => {
+//   const values = Object.values(users);
+//   for (const user of values) {
+//     if (user.email === email) {
+//       return user;
+//     }
+//   }
+//   return null;
+// };
 
 const urlsForUser = (userID) => {
   const keys = urlDatabase;
@@ -108,9 +112,6 @@ const loginEmailPasswordCheck = (req) => {
   return false;
 };
 
-const getUserById = (id) => {
-
-};
 
 // short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
 
@@ -229,7 +230,7 @@ app.post('/api/login', (req, res) => {
     return res.status(400).send("Email and password cant be blank");
   }
 
-  const user = getUserByEmail(email);
+  const user = getUserByEmail(email, users);
   // if (!user || password !== user.password) {
   // console.log(user);
   if (!user || bcrypt.compareSync(password, user.password) === false) {
@@ -290,6 +291,7 @@ app.post('/api/urls/:shortURL/delete', (req, res) => {
   res.redirect(`/urls`);
 });
 
+// module.exports = { users };
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
