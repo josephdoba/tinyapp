@@ -201,13 +201,15 @@ app.post('/api/login', (req, res) => {
   }
 
   req.session.user_id = user.id; // correct session syntax
+  // req.session.user_id = null; // correct session syntax
+  // console.log(`Line 204: ${req.session.user_id}`);
   res.redirect('/urls');
 });
 
 // logout process:
 app.post('/logout', (req, res) => {
   req.session = null;
-  res.redirect('/');
+  res.redirect('/urls'); // Just added this to /urls
 });
 
 // ### API Routes ###:
@@ -216,30 +218,43 @@ app.post('/logout', (req, res) => {
 
 // Create new URL api
 app.post('/api/urls', (req, res) => {
+  
+
   let shortID = generateRandomString();
   urlDatabase[`${shortID}`] = { longURL: req.body.longURL, userID: req.session.user_id};
   
   res.redirect(`/urls/${shortID}`);
 });
 
-// Read all urls:
+// Read all urls: // what are these actually for?
 app.get('/api/urls', (req, res) => {
   res.send('/api/urls - read all urls');
 });
 
-// Read one url:
+// Read one url: // and this one?
 app.get('/api/urls/:shortURL', (req, res) => {
   res.send('/api/urls - read one url');
 });
 
 // Update one url: // we need access to body
 app.post('/api/urls/:shortURL/update', (req, res) => {
+  // const userID = req.session.user_id; // Just added these from feedback
+  if (!userID) {
+    res.status(403);
+    return res.redirect('/login');
+  }
+
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect('/urls');
 });
 
 // Delete one url:
 app.post('/api/urls/:shortURL/delete', (req, res) => {
+  const userID = req.session.user_id; // Just added these from feedback
+  if (!userID) {
+    res.status(403);
+    return res.redirect('/login');
+  }
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
 });
