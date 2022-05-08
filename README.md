@@ -3,8 +3,11 @@
 ## Purpose:
 Allows users to create an account, create lists of URLs to become short, and share with others. This project was created and published by myself, as part of my education at Lighthouse Labs.
 
+#### Main URLs page:
+
 !["My URLs"](https://github.com/josephdoba/tinyapp/blob/main/docs/myUrls_page.png)
 
+#### Updating URLs:
 !["Update URLs"](https://github.com/josephdoba/tinyapp/blob/main/docs/myUrls_update_page.png)
 
 
@@ -22,7 +25,7 @@ Allows users to create an account, create lists of URLs to become short, and sha
 ## Getting Started
 
 - Install all dependencies (using the `npm install` command).
-- Run the development web server using the `node express_server.js` command.
+- Run the development web server using the `node express_server.js` or `start npm`
 
 ## Usage:
 

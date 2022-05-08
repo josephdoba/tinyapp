@@ -1,7 +1,6 @@
 const { assert } = require('chai');
 const { getUserByEmail } = require('../helpers.js');
 
-
 // For testing purposes, we need to navigate to the tests folder and use the 'mocha' command to work. 'npm test' doesn't work for some reason.
 
 const testUsers = {

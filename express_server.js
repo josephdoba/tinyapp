@@ -4,6 +4,9 @@ const PORT = 8080;
 const bcrypt = require('bcryptjs');
 app.set('view engine', 'ejs');
 
+// ### Helper imports
+const { getUserByEmail } = require('./helpers.js');
+
 const cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -46,8 +49,7 @@ const users = {
   }
 };
 
-// ### Helper imports
-const { getUserByEmail } = require('./helpers.js');
+
 
 // ### Helper Functions:
 
@@ -64,7 +66,7 @@ const urlsForUser = (userID) => {
 
 // Check if email or password fields are empty:
 const registrationEmptyCheck = (req) => {
-  if (req.body.name === "" || req.body.email === "" || req.body.password === "") {
+  if (!req.body.name  || !req.body.email  || !req.body.password) {
     return false;
   } else {
     return true;
