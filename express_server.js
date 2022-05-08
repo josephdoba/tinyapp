@@ -149,6 +149,7 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:shortURL', (req, res) => {
   const shortID = req.params.shortURL;
   const userID = req.session.user_id;
+  // console.log(userID);
 
   if (!userID) {
     return res.redirect('/login');
@@ -158,11 +159,12 @@ app.get('/urls/:shortURL', (req, res) => {
     res.status(403);
     return res.redirect('/urls');
   }
-
+  console.log(userID);
+  console.log(userID.email);
   const templateVars = {
     shortURL: shortID,
     longURL: urlDatabase[shortID].longURL,
-    user: userID.email
+    user: users[userID] ? users[userID].email : null
   };
 
   res.render("urls_show", templateVars);
@@ -215,7 +217,7 @@ app.post('/api/login', (req, res) => {
 // logout process:
 app.post('/logout', (req, res) => {
   req.session = null;
-  res.redirect('/urls'); // Just added this to /urls
+  res.redirect('/urls');
 });
 
 // ### API Routes ###:
@@ -244,7 +246,7 @@ app.get('/api/urls/:shortURL', (req, res) => {
 
 // Update one url:
 app.post('/api/urls/:shortURL/update', (req, res) => {
-  // const userID = req.session.user_id; // Just added these from feedback
+  const userID = req.session.user_id;
   if (!userID) {
     res.status(403);
     return res.redirect('/login');
