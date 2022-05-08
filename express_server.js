@@ -66,7 +66,7 @@ const urlsForUser = (userID) => {
 
 // Check if email or password fields are empty:
 const registrationEmptyCheck = (req) => {
-  if (!req.body.name  || !req.body.email  || !req.body.password) {
+  if (req.body.email === "" || req.body.password === "") {
     return false;
   } else {
     return true;
@@ -149,9 +149,16 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:shortURL', (req, res) => {
   const shortID = req.params.shortURL;
   const userID = req.session.user_id;
+
   if (!userID) {
     return res.redirect('/login');
   }
+  
+  if (urlDatabase[req.params.shortURL].userID !== userID) {
+    res.status(403);
+    return res.redirect('/urls');
+  }
+
   const templateVars = {
     shortURL: shortID,
     longURL: urlDatabase[shortID].longURL,
@@ -169,6 +176,7 @@ app.get('/u/:shortURL', (req, res) => {
 
 // Registration:
 app.get('/register', (req, res) => {
+  
   res.render("register");
 });
 
@@ -201,8 +209,6 @@ app.post('/api/login', (req, res) => {
   }
 
   req.session.user_id = user.id; // correct session syntax
-  // req.session.user_id = null; // correct session syntax
-  // console.log(`Line 204: ${req.session.user_id}`);
   res.redirect('/urls');
 });
 
@@ -236,12 +242,16 @@ app.get('/api/urls/:shortURL', (req, res) => {
   res.send('/api/urls - read one url');
 });
 
-// Update one url: // we need access to body
+// Update one url:
 app.post('/api/urls/:shortURL/update', (req, res) => {
   // const userID = req.session.user_id; // Just added these from feedback
   if (!userID) {
     res.status(403);
     return res.redirect('/login');
+  }
+  if (urlDatabase[req.params.shortURL].userID !== userID) {
+    res.status(403);
+    return res.redirect('/urls');
   }
 
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
@@ -250,11 +260,17 @@ app.post('/api/urls/:shortURL/update', (req, res) => {
 
 // Delete one url:
 app.post('/api/urls/:shortURL/delete', (req, res) => {
-  const userID = req.session.user_id; // Just added these from feedback
+  const userID = req.session.user_id;
   if (!userID) {
     res.status(403);
     return res.redirect('/login');
   }
+
+  if (urlDatabase[req.params.shortURL].userID !== userID) {
+    res.status(403);
+    return res.redirect('/urls');
+  }
+
   delete urlDatabase[req.params.shortURL];
   res.redirect(`/urls`);
 });
