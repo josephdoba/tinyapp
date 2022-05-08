@@ -35,12 +35,12 @@ const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: bcrypt.hashSync("purple-dino",10) // Not common practice since the text still shows, however was informed by a mentor this is fine for the assignment
+    password: bcrypt.hashSync("123",10) // Not common practice since the text still shows, however was informed by a mentor this is fine for the assignment
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: bcrypt.hashSync("funk-hawk",10)
+    password: bcrypt.hashSync("123",10)
   },
   "123abc": {
     id: "123abc",
@@ -149,15 +149,14 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:shortURL', (req, res) => {
   const shortID = req.params.shortURL;
   const userID = req.session.user_id;
-  // console.log(userID);
 
   if (!userID) {
     return res.redirect('/login');
   }
   
   if (urlDatabase[req.params.shortURL].userID !== userID) {
-    res.status(403);
-    return res.redirect('/urls');
+    return res.send("This url does not belong to this account");
+    // return res.redirect('/urls');
   }
   console.log(userID);
   console.log(userID.email);
