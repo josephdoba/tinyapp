@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 app.set('view engine', 'ejs');
 
 // ### Helper imports
-const { getUserByEmail } = require('./helpers.js');
+const { getUserByEmail, urlsForUser, registrationEmptyCheck, registrationEmailCheck, loginEmailPasswordCheck, generateRandomString } = require('./helpers.js');
 
 const cookieSession = require('cookie-session');
 const bodyParser = require("body-parser");
@@ -49,68 +49,15 @@ const users = {
   }
 };
 
-
-
-// ### Helper Functions:
-
-const urlsForUser = (userID) => {
-  const keys = urlDatabase;
-  const longURLDatabase = {};
-  for (const shortID in keys) {
-    if (keys[shortID].userID === userID) {
-      longURLDatabase[shortID] = { longURL: keys[shortID].longURL };
-    }
-  }
-  return longURLDatabase;
-};
-
-// Check if email or password fields are empty:
-const registrationEmptyCheck = (req) => {
-  if (req.body.email === "" || req.body.password === "") {
-    return false;
-  } else {
-    return true;
-  }
-};
-
-// loop through emails of database:
-const registrationEmailCheck = (req) => {
-  for (const userid in users) {
-    if (users[userid].email === req.body.email) {
-      return false;
-    }
-  }
-  return true;
-};
-
-// loop through email and password for login:
-const loginEmailPasswordCheck = (req) => {
-  if (!registrationEmailCheck(req)) {
-    for (const password in users) {
-      if (users[password].password === req.body.password) {
-        return true;
-      }
-    }
-  }
-  return false;
-};
-
-
-// short id generator: (referenced from: https://stackoverflow.com/questions/5915096/get-a-random-item-from-a-javascript-array -- Made it my own.)
-const generateRandomString = () => {
-  let randomString = "";
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i <= 6; i++) {
-    randomString += characters[Math.floor(Math.random() * characters.length)];
-  }
-  return randomString;
-};
-
 // ### Index Routes ###:
 
 // Home:
 app.get('/', (req, res) => {
-  res.send('Hello from Homepage');
+  // res.send('Hello from Homepage');
+  const userID = req.session.user_id;
+  if (!userID) {
+    return res.redirect('/login');
+  }
 });
 
 // login Page:
@@ -126,7 +73,7 @@ app.get("/urls", (req, res) => {
     return res.redirect('/login');
   }
 
-  const userURLs = urlsForUser(userID);
+  const userURLs = urlsForUser(userID, urlDatabase);
   const templateVars = {
     urls: userURLs,
     user: users[userID] ? users[userID].email : null
@@ -158,8 +105,7 @@ app.get('/urls/:shortURL', (req, res) => {
     return res.send("This url does not belong to this account");
     // return res.redirect('/urls');
   }
-  console.log(userID);
-  console.log(userID.email);
+
   const templateVars = {
     shortURL: shortID,
     longURL: urlDatabase[shortID].longURL,
@@ -185,7 +131,7 @@ app.get('/register', (req, res) => {
 
 // Submit account registeration:
 app.post('/register', (req, res) => {
-  if (!registrationEmptyCheck(req) || !registrationEmailCheck(req)) {
+  if (!registrationEmptyCheck(req) || !registrationEmailCheck(req, users)) {
     res.status(400);
     return res.send("400 Bad Request");
   }
@@ -206,8 +152,9 @@ app.post('/api/login', (req, res) => {
 
   const user = getUserByEmail(email, users);
   if (!user || bcrypt.compareSync(password, user.password) === false) {
-    return res.status(400).send("Invalid user or password");
+    return res.status(403).send("Invalid user or password");
   }
+
 
   req.session.user_id = user.id; // correct session syntax
   res.redirect('/urls');
@@ -251,10 +198,22 @@ app.post('/api/urls/:shortURL/update', (req, res) => {
     return res.redirect('/login');
   }
   if (urlDatabase[req.params.shortURL].userID !== userID) {
-    res.status(403);
+    res.status(400);
     return res.redirect('/urls');
   }
+  
+  // console.log(req);
 
+  if (!req.body.longURL) {
+    // console.log("------------");
+    // console.log(`longURL: ${req.body.longURL}`);
+    // console.log("------------");
+    res.status(400);
+
+    // return res.redirect('/urls');
+  }
+
+  
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect('/urls');
 });
